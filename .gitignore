@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+temp_uploads/
+exports/figures/shot_*
+integration_test.csv
+test_data.csv
+.DS_Store
