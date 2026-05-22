@@ -8,3 +8,5 @@ exports/figures/shot_*
 integration_test.csv
 test_data.csv
 .DS_Store
+statbot_history.db
+temp_task_*.py

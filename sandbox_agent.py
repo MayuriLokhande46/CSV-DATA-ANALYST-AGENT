@@ -18,9 +18,10 @@ def python_sandbox(code: str):
     The code runs in a sandboxed environment.
     
     IMPORTANT RULES:
-    1. Always save plots using: plt.savefig('exports/figures/your_plot_name.png')
-    2. You can save multiple plots with unique names.
-    3. All plots are automatically captured and shown to the user.
+    1. Always save interactive plots using: fig.write_html('exports/figures/your_plot_name.html')
+    2. Alternatively, for static plots, use plt.savefig('exports/figures/your_plot_name.png')
+    3. You can save multiple plots with unique names.
+    4. All plots are automatically captured and shown to the user.
     """
     # We strip any potential markdown code blocks if the LLM includes them
     clean_code = code.strip()
@@ -65,15 +66,16 @@ DATASET CONTEXT:
 CORE INSTRUCTIONS:
 1. START your code with:
    import pandas as pd
+   import plotly.express as px
    import matplotlib.pyplot as plt
    import seaborn as sns
    df = {read_cmd}('{df_path}')
 
 2. VISUALIZATION:
-   - ALWAYS save plots to 'exports/figures/'.
-   - Format: plt.savefig('exports/figures/unique_plot_name.png')
-   - NEVER use plt.show().
-   - Use professional styles (e.g., sns.set_theme(style="darkgrid")).
+   - PREFER Plotly for interactive charts. Save to 'exports/figures/' as .html.
+   - Format: fig.write_html('exports/figures/unique_plot_name.html')
+   - NEVER use fig.show() or plt.show().
+   - Use professional styles (e.g., template="plotly_dark").
 
 3. MULTI-STEP EXECUTION:
    - Handle complex, multi-part questions (e.g., "Analyze A AND plot B").
