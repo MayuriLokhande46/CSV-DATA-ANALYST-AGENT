@@ -6,110 +6,104 @@ def apply_premium_css():
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap');
         
         :root {
-            --bg-dark: #05070a;
-            --card-bg: rgba(17, 25, 40, 0.75);
-            --accent-blue: #00f2fe;
-            --accent-purple: #764ba2;
-            --text-main: #e2e8f0;
+            --bg-dark: #000000;
+            --card-bg: #111111;
+            --border-color: #222222;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
         }
 
         .stApp {
-            background: radial-gradient(circle at 0% 0%, #0d1117 0%, #05070a 100%);
+            background: #000000;
             color: var(--text-main);
             font-family: 'Outfit', sans-serif;
         }
         
         /* Sidebar Overhaul */
         section[data-testid="stSidebar"] {
-            background: rgba(10, 15, 25, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            background: #000000 !important;
+            border-right: 1px solid var(--border-color);
         }
 
         /* Premium Header */
         .main-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 4.5rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 50%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 3.5rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+            color: #ffffff;
             margin-top: -20px;
-            text-shadow: 0 10px 30px rgba(0, 242, 254, 0.2);
+            margin-bottom: 5px;
         }
 
         /* Dashboard Metric Cards */
         [data-testid="stMetricValue"] {
-            font-family: 'JetBrains Mono', monospace !important;
-            font-weight: 600;
-            color: var(--accent-blue) !important;
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 500;
+            color: #ffffff !important;
         }
         
         .metric-container {
             background: var(--card-bg);
             padding: 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease-in-out;
         }
         
         .metric-container:hover {
-            transform: translateY(-8px);
-            border-color: var(--accent-blue);
-            box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15);
+            border-color: #444444;
         }
 
         /* Chat Bubbles Upgrade */
         .chat-bubble {
-            padding: 1.5rem;
-            border-radius: 24px;
+            padding: 1.2rem;
+            border-radius: 8px;
             margin-bottom: 1.5rem;
             line-height: 1.6;
             font-size: 1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         
         .user-bubble {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom-right-radius: 4px;
+            background: #111111;
+            border: 1px solid var(--border-color);
         }
         
         .bot-bubble {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            border-bottom-left-radius: 4px;
-            backdrop-filter: blur(10px);
+            background: transparent;
+            border: 1px solid transparent;
+            border-left: 3px solid #444444;
+            border-radius: 0;
+            padding-left: 1rem;
         }
 
         /* Custom Input Box */
         [data-testid="stChatInput"] {
-            border-radius: 50px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            background: rgba(15, 23, 42, 0.8) !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--border-color) !important;
+            background: #111111 !important;
         }
 
         /* Buttons */
         .stButton>button {
             width: 100%;
-            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-            color: #05070a !important;
-            font-weight: 700;
+            background: #ffffff;
+            color: #000000 !important;
+            font-weight: 500;
             border: none;
-            border-radius: 12px;
-            padding: 10px 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: background 0.2s;
+        }
+        .stButton>button:hover {
+            background: #e5e5e5;
         }
 
         /* Expanding code/tables */
         .stDataFrame {
-            border-radius: 15px;
+            border-radius: 8px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
         }
         
         /* Hide specific Streamlit defaults */
