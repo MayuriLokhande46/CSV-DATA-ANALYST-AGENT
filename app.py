@@ -24,7 +24,8 @@ st.set_page_config(
 apply_premium_css()
 init_session()
 
-if "session_id" not in st.session_state:
+# Ensure session_id is always initialized
+if not st.session_state.get("session_id"):
     st.session_state.session_id = str(uuid.uuid4())
 
 # --- SIDEBAR ---
@@ -75,25 +76,26 @@ if uploaded_file:
         st.session_state.session_id = str(uuid.uuid4())
         
         welcome_msg = {
-            "role": "assistant", 
-            "content": f"👋 **Welcome!** I've analyzed '{uploaded_file.name}'.\\n\\n{st.session_state.auto_insights['summary']}"
+            "role": "assistant",
+            "content": f"👋 **Welcome!** I've analyzed `{uploaded_file.name}`.\n\n{st.session_state.auto_insights['summary']}"
         }
         st.session_state.messages.append(welcome_msg)
         database.save_message(st.session_state.session_id, welcome_msg["role"], welcome_msg["content"])
         
         st.success("✅ Data successfully ingested!")
         st.info("Click the button below to start analyzing your data.")
-        
-        if st.button("🚀 Proceed to Chatbot", use_container_width=True):
-            st.switch_page("pages/1_Chatbot.py")
             
     except Exception as e:
         st.error(f"Error reading file: {e}")
 
+if st.session_state.df is not None:
+    if st.button("🚀 Proceed to Chatbot", use_container_width=True):
+        st.switch_page("pages/1_Chatbot.py")
+
 # Empty State Visual
 if st.session_state.df is None and not uploaded_file:
     st.markdown("""
-    <div style='text-align: center; padding: 5rem; background: #111111; border-radius: 12px; border: 1px dashed #444444; margin-top: 2rem;'>
+    <div style='text-align: center; padding: 8rem 2rem; background: #111111; border-radius: 12px; border: 1px dashed #444444; margin-top: 2rem;'>
         <h2 style='color: #ffffff; font-weight: 500;'>Ready to get started?</h2>
         <p style='color: #9ca3af;'>Upload a CSV or Excel file above to begin autonomous exploration.</p>
     </div>

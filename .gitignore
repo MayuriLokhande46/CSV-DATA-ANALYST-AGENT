@@ -3,10 +3,13 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.venv
 temp_uploads/
-exports/figures/shot_*
+exports/
 integration_test.csv
 test_data.csv
 .DS_Store
 statbot_history.db
 temp_task_*.py
+sandbox/
+*.db

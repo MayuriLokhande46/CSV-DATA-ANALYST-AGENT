@@ -3,6 +3,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
 from sandbox_executor import ExecutionSandbox
 
 load_dotenv()
@@ -10,95 +11,140 @@ load_dotenv()
 # Global sandbox instance
 sandbox = ExecutionSandbox()
 
+# We use a mutable dict so the tool closure can access the current session_id
+_session_context = {"session_id": "default"}
+
+
 @tool
 def python_sandbox(code: str):
     """
-    Executes Python code for data analysis and plotting. 
+    Executes Python code for data analysis and plotting.
     Use this tool to interact with the dataframe 'df' and create visualizations.
-    The code runs in a sandboxed environment.
-    
+    The code runs in a secure, sandboxed environment.
+
     IMPORTANT RULES:
-    1. Always save interactive plots using: fig.write_html('exports/figures/your_plot_name.html')
-    2. Alternatively, for static plots, use plt.savefig('exports/figures/your_plot_name.png')
-    3. You can save multiple plots with unique names.
-    4. All plots are automatically captured and shown to the user.
+    1. Always save interactive Plotly plots: fig.write_html('exports/figures/your_plot_name.html')
+    2. For static matplotlib/seaborn plots: plt.savefig('exports/figures/your_plot_name.png', dpi=150, bbox_inches='tight')
+    3. NEVER call plt.show() or fig.show() — they are automatically suppressed.
+    4. Give every plot a unique, descriptive filename.
+    5. All saved plots are automatically displayed to the user.
     """
-    # We strip any potential markdown code blocks if the LLM includes them
+    session_id = _session_context.get("session_id", "default")
+
+    # Strip potential markdown fences that LLM might include
     clean_code = code.strip()
     if clean_code.startswith("```python"):
         clean_code = clean_code[9:]
+    if clean_code.startswith("```"):
+        clean_code = clean_code[3:]
     if clean_code.endswith("```"):
         clean_code = clean_code[:-3]
-    
-    result = sandbox.execute_code(clean_code)
-    
-    feedback = f"STDOUT:\n{result['stdout']}"
+    clean_code = clean_code.strip()
+
+    result = sandbox.execute_code(clean_code, session_id=session_id)
+
+    # Build structured feedback for the LLM
+    feedback_parts = []
+
+    if result.get("blocked"):
+        feedback_parts.append(f"🚫 SECURITY BLOCKED:\n{result['stderr']}")
+        return "\n".join(feedback_parts)
+
+    if result["stdout"]:
+        feedback_parts.append(f"STDOUT:\n{result['stdout']}")
+
     if result["stderr"]:
-        feedback += f"\nSTDERR:\n{result['stderr']}"
-    
+        feedback_parts.append(f"STDERR (warnings/errors):\n{result['stderr']}")
+
     if result["artifacts"]:
-        feedback += f"\n\nSUCCESS: Generated {len(result['artifacts'])} plot(s): {', '.join(result['artifacts'])}"
-    
-    return f"{feedback}\nSandbox Mode: {result['is_sandbox']}"
+        feedback_parts.append(
+            f"✅ SUCCESS: Generated {len(result['artifacts'])} plot(s): "
+            + ", ".join(result["artifacts"])
+        )
+    else:
+        if result["success"]:
+            feedback_parts.append("✅ Code executed successfully (no plots generated).")
+        else:
+            feedback_parts.append("❌ Execution failed. See STDERR above for details.")
 
-from langchain.agents import create_agent
+    feedback_parts.append(f"Sandbox Mode: {'Docker 🐳' if result['is_sandbox'] else 'Local ⚠️'}")
 
-def get_sandbox_agent(df_path: str, model_name: str = "gemini-flash-lite-latest"):
+    return "\n\n".join(feedback_parts)
+
+
+def get_sandbox_agent(df_path: str, model_name: str = "gemini-2.0-flash", session_id: str = "default"):
     """
-    Creates a StatBot Pro agent using the LangChain 1.x graph factory.
+    Creates a StatBot Pro agent using the modern LangGraph create_react_agent.
+    Session ID is used to isolate per-user figure outputs.
     """
+    # Update session context so the tool closure picks up the right session
+    _session_context["session_id"] = session_id
+
     llm = ChatGoogleGenerativeAI(
         model=model_name,
         temperature=0,
-        google_api_key=os.getenv("GOOGLE_API_KEY")
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
     )
 
-    # Simple logic to determine read command
+    # Determine correct read command
     read_cmd = "pd.read_csv" if df_path.endswith(".csv") else "pd.read_excel"
+    # Use forward slashes for cross-platform compatibility
+    df_path_safe = df_path.replace("\\", "/")
 
-    system_prompt = f"""You are StatBot Pro, a premium autonomous data analyst. 
-Your goal is to answer user questions by writing and executing Python code.
+    system_prompt = f"""You are StatBot Pro, a world-class autonomous data analyst.
+Your mission: answer user questions by writing and executing precise Python code.
 
-DATASET CONTEXT:
-- File Path: '{df_path}'
-- Primary DataFrame Name: 'df'
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATASET CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+- File Path : '{df_path_safe}'
+- DataFrame : 'df'
 
-CORE INSTRUCTIONS:
-1. START your code with:
-   import pandas as pd
-   import plotly.express as px
-   import matplotlib.pyplot as plt
-   import seaborn as sns
-   df = {read_cmd}('{df_path}')
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+MANDATORY CODE STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Always start your code with:
+    import pandas as pd
+    import numpy as np
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    df = {read_cmd}('{df_path_safe}')
 
-2. VISUALIZATION:
-   - PREFER Plotly for interactive charts. Save to 'exports/figures/' as .html.
-   - Format: fig.write_html('exports/figures/unique_plot_name.html')
-   - NEVER use fig.show() or plt.show().
-   - Use professional styles (e.g., template="plotly_dark").
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+VISUALIZATION RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+- PREFER Plotly for all interactive charts.
+- Save Plotly: fig.write_html('exports/figures/descriptive_name.html')
+- Save Matplotlib: plt.savefig('exports/figures/descriptive_name.png', dpi=150, bbox_inches='tight')
+- Template: use template="plotly_dark" for all plotly charts.
+- NEVER call plt.show() or fig.show() — they are blocked.
 
-3. MULTI-STEP EXECUTION:
-   - Handle complex, multi-part questions (e.g., "Analyze A AND plot B").
-   - You can call the 'python_sandbox' tool multiple times if needed.
-   - For multiple charts, give them unique names: 'exports/figures/sales_trend.png', 'exports/figures/category_dist.png', etc.
-   - Always conclude with a sophisticated business summary of ALL tasks performed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+REASONING RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. For complex questions, break them into steps and call python_sandbox multiple times.
+2. After execution, provide a concise, professional business summary of your findings.
+3. If code fails, diagnose the error from STDERR and retry with a corrected version.
+4. Always explain your findings in plain English after the analysis.
 """
 
-    # create_agent in 1.x returns a compiled graph
-    graph = create_agent(
+    # create_react_agent returns a compiled LangGraph StateGraph
+    graph = create_react_agent(
         model=llm,
         tools=[python_sandbox],
-        system_prompt=system_prompt
+        prompt=system_prompt,
     )
 
     return graph
 
+
 if __name__ == "__main__":
-    # Quick test
+    # Quick smoke test
     test_csv = "test_data.csv"
-    pd.DataFrame({'A': [1, 2], 'B': [3, 4]}).to_csv(test_csv, index=False)
-    
-    agent = get_sandbox_agent(test_csv)
-    # result = agent.invoke({"input": "What is the average of column A?"})
-    # print(result["output"])
+    pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]}).to_csv(test_csv, index=False)
+    agent = get_sandbox_agent(test_csv, session_id="smoke_test")
+    result = agent.invoke({"messages": [{"role": "user", "content": "What is the average of column A?"}]})
+    print(result["messages"][-1].content)
     os.remove(test_csv)
