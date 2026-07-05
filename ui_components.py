@@ -219,7 +219,7 @@ def init_session():
         "profiling": None,
         "auto_insights": None,
         "is_cleaned": False,
-        "selected_model": "gemini-2.0-flash-lite",
+        "selected_model": "gemini-flash-latest",
         "session_id": None,   # Set properly in app.py with uuid
     }
     for key, value in defaults.items():

@@ -54,9 +54,8 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### 🤖 Model Selection")
     model_map = {
-        "⚡ Flash Lite (Ultra Fast)": "gemini-2.0-flash-lite",
-        "⚖️ Flash (Balanced)": "gemini-2.5-flash",
-        "🧠 Pro (Expert Reasoning)": "gemini-2.5-pro",
+        "⚡ Flash (Balanced)": "gemini-flash-latest",
+        "🧠 Pro (Expert Reasoning)": "gemini-pro-latest",
     }
     idx = list(model_map.values()).index(st.session_state.selected_model) \
         if st.session_state.selected_model in model_map.values() else 0
@@ -235,6 +234,7 @@ def _run_agent(prompt: str):
                 new_message["content"],
                 new_message.get("plots"),
             )
+            st.rerun() # Move rerun here so it only happens on success
 
         except Exception as e:
             st.error(f"❌ Exploration failed: {str(e)}")
@@ -246,7 +246,6 @@ if prompt := st.chat_input("Ask StatBot Pro about your data..."):
     st.session_state.messages.append(user_msg)
     database.save_message(st.session_state.session_id, user_msg["role"], user_msg["content"])
     _run_agent(prompt)
-    st.rerun()
 
 # --- Auto prompt from suggested question button ---
 if auto_prompt:
@@ -254,4 +253,3 @@ if auto_prompt:
     st.session_state.messages.append(user_msg)
     database.save_message(st.session_state.session_id, user_msg["role"], user_msg["content"])
     _run_agent(auto_prompt)
-    st.rerun()

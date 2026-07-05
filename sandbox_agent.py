@@ -72,7 +72,7 @@ def python_sandbox(code: str):
     return "\n\n".join(feedback_parts)
 
 
-def get_sandbox_agent(df_path: str, model_name: str = "gemini-2.0-flash", session_id: str = "default"):
+def get_sandbox_agent(df_path: str, model_name: str = "gemini-flash-latest", session_id: str = "default"):
     """
     Creates a StatBot Pro agent using the modern LangGraph create_react_agent.
     Session ID is used to isolate per-user figure outputs.
@@ -82,7 +82,7 @@ def get_sandbox_agent(df_path: str, model_name: str = "gemini-2.0-flash", sessio
 
     llm = ChatGoogleGenerativeAI(
         model=model_name,
-        temperature=0,
+        temperature=0.2,
         google_api_key=os.getenv("GOOGLE_API_KEY"),
     )
 
